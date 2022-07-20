@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+
+# CCS
+*.project
+driverlib/*
+Debug/*
+*.settings
+*.cproject
+*.ccsproject
+targetConfigs/*
+.launches/*
+*.cmd
