@@ -25,126 +25,70 @@
  * 4 - msp430_driverlib_2_91_13_01
  */
 
-#include "driverlib.h"
+#include <driverlib.h>
 #include "hal_LCD.h"
+#include "adc.h"
 
-#define   Num_of_Results   8
+#define Num_of_Results  8
+#define STARTUP_MODE    0
+#define MSP6989_CONF    1
 
 volatile uint16_t A0results[Num_of_Results];
 volatile uint16_t A1results[Num_of_Results];
 volatile uint16_t A2results[Num_of_Results];
 volatile uint16_t A3results[Num_of_Results];
+volatile uint16_t A4results[Num_of_Results];
+volatile uint16_t A5results[Num_of_Results];
+volatile uint16_t A6results[Num_of_Results];
+volatile uint16_t A7results[Num_of_Results];
+volatile uint16_t A8results[Num_of_Results];
+volatile uint16_t A9results[Num_of_Results];
+volatile uint16_t A10results[Num_of_Results];
+volatile uint16_t A11results[Num_of_Results];
+volatile uint16_t A12results[Num_of_Results];
+volatile uint16_t A13results[Num_of_Results];
+volatile uint16_t A14results[Num_of_Results];
+volatile uint16_t A15results[Num_of_Results];
+volatile unsigned char mode = STARTUP_MODE;
+volatile unsigned char conf = MSP6989_CONF;
 
 void main (void)
 {
-    //Stop Watchdog Timer
+    /* Stop Watchdog Timer
+     * Example code in Section 8.6.5 of Reference 3.
+     * Wrapped by the wdt_a driver in this implementation.
+     */
     WDT_A_hold(WDT_A_BASE);
 
-    //Enable A/D channel inputs - Port P1
-    GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,
-        GPIO_PIN0 + GPIO_PIN1 + GPIO_PIN2 +
-        GPIO_PIN3,
-        GPIO_TERNARY_MODULE_FUNCTION
-        );
+    /*
+     * Farmed out to adc suite.
+     */
+    Init_GPIO_For_ADC12_B_All_AI();
 
     /*
      * Disable the GPIO power-on default high-impedance mode to activate
-     * previously configured port settings
+     * previously configured port settings.
+     * Comes from the Note in Section 6.11.1 in Reference 1.
      */
     PMM_unlockLPM5();
 
-
-    //Initialize the ADC12B Module
-    /*
-    * Base address of ADC12B Module
-    * Use internal ADC12B bit as sample/hold signal to start conversion
-    * USE MODOSC 5MHZ Digital Oscillator as clock source
-    * Use default clock divider/pre-divider of 1
-    * Not use internal channel
-    */
-    ADC12_B_initParam initParam = {0};
-    initParam.sampleHoldSignalSourceSelect = ADC12_B_SAMPLEHOLDSOURCE_SC;
-    initParam.clockSourceSelect = ADC12_B_CLOCKSOURCE_ADC12OSC;
-    initParam.clockSourceDivider = ADC12_B_CLOCKDIVIDER_1;
-    initParam.clockSourcePredivider = ADC12_B_CLOCKPREDIVIDER__1;
-    initParam.internalChannelMap = ADC12_B_NOINTCH;
-    ADC12_B_init(ADC12_B_BASE, &initParam);
-
-    //Enable the ADC12B module
-    ADC12_B_enable(ADC12_B_BASE);
+    // LCD Shenanigans
+    __enable_interrupt();
+    Init_LCD();
+    GPIO_clearInterrupt(GPIO_PORT_P1, GPIO_PIN1);
+    GPIO_clearInterrupt(GPIO_PORT_P1, GPIO_PIN2);
+    __enable_interrupt();
+    displayScrollText("WELCOME TO THE AI SCANNER");
 
     /*
-    * Base address of ADC12B Module
-    * For memory buffers 0-7 sample/hold for 16 clock cycles
-    * For memory buffers 8-15 sample/hold for 4 clock cycles (default)
-    * Enable Multiple Sampling
-    */
-    ADC12_B_setupSamplingTimer(ADC12_B_BASE,
-      ADC12_B_CYCLEHOLD_16_CYCLES,
-      ADC12_B_CYCLEHOLD_4_CYCLES,
-      ADC12_B_MULTIPLESAMPLESENABLE);
-
-    //Configure Memory Buffers
-
-    /*
-    * Base address of the ADC12B Module
-    * Configure memory buffer 0
-    * Map input A0 to memory buffer 0
-    * Vref+ = AVcc
-    * Vref- = EXT Positive
-    * Memory buffer 0 is not the end of a sequence
-    */
-    ADC12_B_configureMemoryParam param0 = {0};
-    param0.memoryBufferControlIndex = ADC12_B_MEMORY_0;
-    param0.inputSourceSelect = ADC12_B_INPUT_A0;
-    param0.refVoltageSourceSelect = ADC12_B_VREFPOS_AVCC_VREFNEG_VSS;
-    param0.endOfSequence = ADC12_B_NOTENDOFSEQUENCE;
-    ADC12_B_configureMemory(ADC12_B_BASE, &param0);
-
-    /*
-    * Base address of the ADC12B Module
-    * Configure memory buffer 1
-    * Map input A1 to memory buffer 1
-    * Vref+ = AVcc
-    * Vref- = EXT Positive
-    * Memory buffer 1 is not the end of a sequence
-    */
-    ADC12_B_configureMemoryParam param1 = {0};
-    param1.memoryBufferControlIndex = ADC12_B_MEMORY_1;
-    param1.inputSourceSelect = ADC12_B_INPUT_A1;
-    param0.refVoltageSourceSelect = ADC12_B_VREFPOS_AVCC_VREFNEG_VSS;
-    param1.endOfSequence = ADC12_B_NOTENDOFSEQUENCE;
-    ADC12_B_configureMemory(ADC12_B_BASE, &param1);
-
-    /*
-    * Base address of the ADC12B Module
-    * Configure memory buffer 2
-    * Map input A2 to memory buffer 2
-    * Vref+ = AVcc
-    * Vref- = EXT Positive
-    * Memory buffer 2 is not the end of a sequence
-    */
-    ADC12_B_configureMemoryParam param2 = {0};
-    param2.memoryBufferControlIndex = ADC12_B_MEMORY_2;
-    param2.inputSourceSelect = ADC12_B_INPUT_A2;
-    param0.refVoltageSourceSelect = ADC12_B_VREFPOS_AVCC_VREFNEG_VSS;
-    param2.endOfSequence = ADC12_B_NOTENDOFSEQUENCE;
-    ADC12_B_configureMemory(ADC12_B_BASE, &param2);
-
-    /*
-     * Base address of the ADC12B Module
-     * Configure memory buffer 3
-     * Map input A3 to memory buffer 3
-     * Vr+ = AVcc
-     * Vr- = AVss
-     * Memory buffer 3 IS the end of a sequence
+     * Farmed out to adc suite.
      */
-    ADC12_B_configureMemoryParam param3 = {0};
-    param3.memoryBufferControlIndex = ADC12_B_MEMORY_3;
-    param3.inputSourceSelect = ADC12_B_INPUT_A3;
-    param0.refVoltageSourceSelect = ADC12_B_VREFPOS_AVCC_VREFNEG_VSS;
-    param3.endOfSequence = ADC12_B_ENDOFSEQUENCE;
-    ADC12_B_configureMemory(ADC12_B_BASE ,&param3);
+    Init_Enable_ADC12_B();
+
+    /*
+     * Farmed out to adc suite.
+     */
+    Config_Mem_Buffers();
 
     //Enable memory buffer 3 interrupt
     ADC12_B_clearInterrupt(ADC12_B_BASE,
@@ -158,7 +102,7 @@ void main (void)
       0,
       0);
 
-    //Enable/Start first sampling and conversion cycle
+    // Enable/Start first sampling and conversion cycle
     /*
      * Base address of ADC12B Module
      * Start the conversion into memory buffer 0
@@ -168,9 +112,9 @@ void main (void)
         ADC12_B_MEMORY_0,
         ADC12_B_REPEATED_SEQOFCHANNELS);
 
-    //Enter LPM0, Enable interrupts
+    // Enter LPM0, Enable interrupts
     __bis_SR_register(LPM0_bits + GIE);
-    //For debugger
+    // For debugger
     __no_operation();
 }
 
@@ -208,6 +152,54 @@ void ADC12ISR (void)
             A3results[index] =
                 ADC12_B_getResults(ADC12_B_BASE,
                     ADC12_B_MEMORY_3);
+            //Move A4 results, IFG is cleared
+            A4results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_4);
+            //Move A5 results, IFG is cleared
+            A5results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_5);
+            //Move A6 results, IFG is cleared
+            A6results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_6);
+            //Move A7 results, IFG is cleared
+            A7results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_7);
+            //Move A8 results, IFG is cleared
+            A8results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_8);
+            //Move A9 results, IFG is cleared
+            A9results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_9);
+            //Move A10 results, IFG is cleared
+            A10results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_10);
+            //Move A11 results, IFG is cleared
+            A11results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_11);
+            //Move A12 results, IFG is cleared
+            A12results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_12);
+            //Move A13 results, IFG is cleared
+            A13results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_13);
+            //Move A14 results, IFG is cleared
+            A14results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_14);
+            //Move A15 results, IFG is cleared
+            A15results[index] =
+                ADC12_B_getResults(ADC12_B_BASE,
+                    ADC12_B_MEMORY_15);
             //Increment results index, modulo; Set BREAKPOINT here
             index++;
 

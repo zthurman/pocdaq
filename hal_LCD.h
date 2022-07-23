@@ -41,8 +41,8 @@
  *
  ******************************************************************************/
 
-#ifndef OUTOFBOX_MSP430FR6989_HAL_LCD_H_
-#define OUTOFBOX_MSP430FR6989_HAL_LCD_H_
+#ifndef AI_SCANNER_HAL_LCD_H_
+#define AI_SCANNER_HAL_LCD_H_
 
 //Change based on LCD Memory locations
 #define pos1 9   /* Digit A1 begins at S18 */
